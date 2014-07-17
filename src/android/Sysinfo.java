@@ -16,6 +16,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Scanner;
 
+//add @Wong
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import android.util.*;
 
 public class Sysinfo extends CordovaPlugin {
@@ -49,9 +53,11 @@ public class Sysinfo extends CordovaPlugin {
 		try {
 			// Get CPU Core count
 			String output = readSystemFile("/sys/devices/system/cpu/present");
+			String cpuinfoFile = readSystemFile("/proc/cpuinfo");
 			String[] parts = output.split("-");
+			String[] cif_parts = cpuinfoFile.split(":");
 			Integer cpuCount = Integer.parseInt(parts[1]) + 1;
-			
+
 			cpu.put("count", cpuCount);
 
 			// Get CPU Core frequency
@@ -60,9 +66,22 @@ public class Sysinfo extends CordovaPlugin {
 				Integer cpuMaxFreq = getCPUFrequencyMax(i);
 				cpuCores.put(cpuMaxFreq == 0 ? null : cpuMaxFreq);
 			}
-			
+
 			cpu.put("cores", cpuCores);
+
+			// Get CPU Hardware Of Mr.Wong @ 2014.7.14
+            int cif_parts_len = cif_parts.length;
+			Pattern preg = Pattern.compile("Hardware");
 			
+			for(int c_i=0;c_i < cif_parts_len; c_i++){
+                Matcher mreg = preg.matcher(cif_parts[c_i]);
+                boolean isCPU = mreg.find();
+				if(isCPU){
+					String cpuName = cif_parts[c_i+1].replace("Revision"," ");
+					cpu.put("hardware",cpuName);
+				}
+			}
+
 		} catch (final Exception e) { }
 		return cpu;
 	}
